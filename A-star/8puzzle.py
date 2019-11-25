@@ -26,20 +26,21 @@ def get0index(node):
 
 def move(direction, node):
     x, y = get0index(node)
-    new_node = a_star.SearchNode(node.state)
+    new_node = a_star.SearchNode()
+    new_node.state = copy.deepcopy(node.state)
     new_node.prev = node
-    new_node.steps += 1
+    new_node.steps = node.steps + 1
     if direction == 'up':
-        new_node.state[x][y] = new_node.state[x - 1][y]
+        new_node.state[x][y] = node.state[x - 1][y]
         new_node.state[x - 1][y] = 0
     elif direction == 'down':
-        new_node.state[x][y] = new_node.state[x + 1][y]
+        new_node.state[x][y] = node.state[x + 1][y]
         new_node.state[x + 1][y] = 0
     elif direction == 'left':
-        new_node.state[x][y] = new_node.state[x][y - 1]
+        new_node.state[x][y] = node.state[x][y - 1]
         new_node.state[x][y - 1] = 0
     elif direction == 'right':
-        new_node.state[x][y] = new_node.state[x][y + 1]
+        new_node.state[x][y] = node.state[x][y + 1]
         new_node.state[x][y + 1] = 0
     else:
         raise ValueError("direction incorrect!")
@@ -71,6 +72,12 @@ def judge(state):
                 count+=1
     return count%2==0
 
+def printPuzzle(node):
+    for row in node.state:
+        for col in row:
+            print(col, end='\t')
+        print('\n')
+
 if __name__ == '__main__':
     init_state = [[1,3,4],[8,0,5],[7,2,6]]
     goal_state = [[1,2,3],[8,0,4],[7,6,5]]
@@ -78,5 +85,8 @@ if __name__ == '__main__':
         print("No solutions!")
     else:
         problem = a_star.Problem(init_state, goal_state)
-        print(a_star.AStarTreeSearch(problem, g, h, select, expand))
+        path = a_star.AStarTreeSearch(problem, g, h, select, expand)
+        for n in path:
+            printPuzzle(n)
+            print('--------------------')
 
