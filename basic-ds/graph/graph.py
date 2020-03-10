@@ -19,7 +19,7 @@ class Graph:
         return self.__str__()
 
     def __str__(self):
-        return 'vertices: ' + str(self.vertices)
+        return 'vertices: ' + str(list(self.vertices.keys()))
 
     def display_graph(self):
         output = ''
@@ -88,21 +88,22 @@ class Graph:
                 }
         return json_graph
 
-    def dump(self, filename='graph_data.json'):
-        import json
-        json.dump(self.to_json(), open(filename, 'w'), indent=4)
 
-    @classmethod
-    def load(cls, filename):
-        import json
-        json_graph = json.load(open(filename, 'r'))
-        g = Graph()
-        for v in json_graph['vertices'].values():
-            g.add_vertex(v['vid'], v['vname'], v['vdata'])
-        for vfrom_id, e in json_graph['adjlist'].items():
-            for vto_id in e:
-                g.add_edge(vfrom_id, vto_id)
-        return g
+def dump_graph(g, filename='graph_data.json'):
+    import json
+    json.dump(g.to_json(), open(filename, 'w'), indent=4)
+
+def load_graph(filename):
+    import json
+    json_graph = json.load(open(filename, 'r'))
+    g = Graph()
+    for v in json_graph['vertices'].values():
+        g.add_vertex(v['vid'], v['vname'], v['vdata'])
+    for vfrom_id, e in json_graph['adjlist'].items():
+        for vto_id in e:
+            g.add_edge(vfrom_id, vto_id)
+    return g
+
 
 if __name__ == '__main__':
     g = Graph()
@@ -118,7 +119,7 @@ if __name__ == '__main__':
     g.add_edge(vb.vid, vd.vid)
 
     g.display_graph()
-    g.dump()
+    dump_graph(g)
     print(g.size())
 
     print('-------------------------------------------')
