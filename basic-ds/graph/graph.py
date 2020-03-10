@@ -1,3 +1,4 @@
+import uuid
 
 class Vertex:
     def __init__(self, vid, vname, vdata):
@@ -7,7 +8,8 @@ class Vertex:
 
 
 class Graph:
-    def __init__(self):
+    def __init__(self, use_uuid=False):
+        self.use_uuid = use_uuid
         self.vertices = {}
         self.adjlist = {}
         self.v_size = 0
@@ -17,7 +19,7 @@ class Graph:
         return self.__str__()
 
     def __str__(self):
-        return str(self.__repr__())
+        return 'vertices: ' + str(self.vertices)
 
     def display_graph(self):
         output = ''
@@ -25,7 +27,7 @@ class Graph:
         for v, e in self.adjlist.items():
             output += '{:<10}  {:<100}\n'.format(str(v), str(e))
         print(output)
-        return output
+        # return output
 
     def is_empty(self):
         return self.v_size == 0
@@ -39,8 +41,13 @@ class Graph:
     def has_edge(self, vfrom_id, vto_id):
         return vto_id in self.adjlist[vfrom_id]
 
-    def add_vertex(self, vname=None, vdata=None):
-        v = Vertex(self.v_size, vname, vdata)
+    def add_vertex(self, vid=None, vname=None, vdata=None):
+        if not vid:
+            if self.use_uuid:
+                vid = uuid.uuid4().hex
+            else:
+                vid = str(self.v_size)
+        v = Vertex(vid, vname, vdata)
         self.vertices[v.vid] = v
         self.adjlist[v.vid] = []
         self.v_size += 1
@@ -72,13 +79,38 @@ class Graph:
             if v.vname == vname:
                 return v
 
+    def to_json(self):
+        json_graph = {}
+        json_graph['adjlist'] = self.adjlist
+        json_graph['vertices'] = { 
+                vid: v.__dict__ \
+                        for vid, v in self.vertices.items() 
+                }
+        return json_graph
+
+    def dump(self, filename='graph_data.json'):
+        import json
+        json.dump(self.to_json(), open(filename, 'w'), indent=4)
+
+    @classmethod
+    def load(cls, filename):
+        import json
+        json_graph = json.load(open(filename, 'r'))
+        g = Graph()
+        for v in json_graph['vertices'].values():
+            g.add_vertex(v['vid'], v['vname'], v['vdata'])
+        for vfrom_id, e in json_graph['adjlist'].items():
+            for vto_id in e:
+                g.add_edge(vfrom_id, vto_id)
+        return g
+
 if __name__ == '__main__':
     g = Graph()
     
-    va = g.add_vertex('a')
-    vb = g.add_vertex('b')
-    vc = g.add_vertex('c')
-    vd = g.add_vertex('d')
+    va = g.add_vertex(vname='a')
+    vb = g.add_vertex(vname='b')
+    vc = g.add_vertex(vname='c')
+    vd = g.add_vertex(vname='d')
 
     g.add_edge(va.vid, vb.vid)
     g.add_edge(vb.vid, va.vid)
@@ -86,6 +118,7 @@ if __name__ == '__main__':
     g.add_edge(vb.vid, vd.vid)
 
     g.display_graph()
+    g.dump()
     print(g.size())
 
     print('-------------------------------------------')
