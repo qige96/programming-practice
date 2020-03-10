@@ -6,6 +6,12 @@ class Vertex:
         self.vname = vname
         self.vdata = vdata
 
+    def __repr__(self):
+        return self.__str__()
+
+    def __str__(self):
+        return 'Vertex: <{0}>'.format(self.vid)
+
 
 class Graph:
     def __init__(self, use_uuid=False):
@@ -89,6 +95,34 @@ class Graph:
         return json_graph
 
 
+def bfs(g, func):
+    visited = []
+    to_visit = []
+    for v in g.vertices:
+        if v not in visited:
+            to_visit.insert(0, v)
+            while len(to_visit) != 0:
+                v = to_visit.pop()
+                visited.append(v)
+                func(g.get_vertex(v))
+                for vout in g.adjlist[v]:
+                    if vout not in visited:
+                        to_visit.insert(0, vout)
+
+def dfs(g, func):
+    visited = []
+    to_visit = []
+    for v in g.vertices:
+        if v not in visited:
+            to_visit.append(v)
+            while len(to_visit) != 0:
+                v = to_visit.pop()
+                visited.append(v)
+                func(g.get_vertex(v))
+                for vout in g.adjlist[v]:
+                    if vout not in visited:
+                        to_visit.append(vout)
+
 def dump_graph(g, filename='graph_data.json'):
     import json
     json.dump(g.to_json(), open(filename, 'w'), indent=4)
@@ -121,6 +155,9 @@ if __name__ == '__main__':
     g.display_graph()
     dump_graph(g)
     print(g.size())
+
+    bfs(g, print)
+    dfs(g, print)
 
     print('-------------------------------------------')
 
