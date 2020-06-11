@@ -4,6 +4,7 @@ import (
     "fmt"
     "strconv"
     "strings"
+    "C"
 )
 
 type any interface{}
@@ -67,7 +68,7 @@ func (g *Graph) RemoveEdge(vFromId string, vToId string) {
     }
 }
 
-func DisplayGraph (g Graph) {
+func (g *Graph) DisplayGraph() {
     fmt.Printf("%-10s  %s\n", "Vertex", "Edges(out)")
     fmt.Println(strings.Repeat("-", 22))
     for vFromId, vToList := range g.adjlist {
@@ -77,8 +78,12 @@ func DisplayGraph (g Graph) {
     fmt.Printf("%-10d  %-10d\n\n", g.vSize, g.eSize)
 }
 
-func NewGraph() (Graph, error) {
-    return Graph{make(map[string][]Vertex), make(map[string][]string), 0, 0}, nil
+func BFS (g *Graph, f func(args... interface{})(int, error)) {
+    f(g)
+}
+
+func NewGraph() (*Graph, error) {
+    return &Graph{make(map[string][]Vertex), make(map[string][]string), 0, 0}, nil
 }
 
 func main() {
@@ -92,10 +97,12 @@ func main() {
     g.AddEdge(v3.vid, v1.vid)
     g.AddEdge(v1.vid, v2.vid)
     g.AddEdge(v1.vid, v3.vid)
-    DisplayGraph(g)
+    g.DisplayGraph()
 
     g.RemoveVertex(v3.vid)
-    DisplayGraph(g)
+    g.DisplayGraph()
 
     fmt.Println(g)
+
+    BFS(g, fmt.Print)
 }

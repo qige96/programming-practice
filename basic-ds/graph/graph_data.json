@@ -1,0 +1,36 @@
+{
+    "adjlist": {
+        "0": [
+            "1",
+            "2"
+        ],
+        "1": [
+            "0",
+            "3"
+        ],
+        "2": [],
+        "3": []
+    },
+    "vertices": {
+        "0": {
+            "vid": "0",
+            "vname": "a",
+            "vdata": null
+        },
+        "1": {
+            "vid": "1",
+            "vname": "b",
+            "vdata": null
+        },
+        "2": {
+            "vid": "2",
+            "vname": "c",
+            "vdata": null
+        },
+        "3": {
+            "vid": "3",
+            "vname": "d",
+            "vdata": null
+        }
+    }
+}
