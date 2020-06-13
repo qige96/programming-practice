@@ -9,8 +9,7 @@ from utils import binarize, sigmoid
 #                                Regression
 # ============================================================================
 
-
-class LinearRegression:
+class MyLinearRegression:
 
     def __init__(self):
         self.w = None
@@ -105,7 +104,7 @@ class LinearRegression:
         return X.dot(self.w) + self.b
 
 
-class LogisticRegression:
+class MyLogisticRegression:
 
     def __init__(self):
         self.w = None
@@ -185,16 +184,190 @@ class LogisticRegression:
 #                               Decision Tree
 # ============================================================================
 
-class DecisionTree:
 
+class DTreeNode:
+    def __init__(self, attr_id, X, y, children, label):
+        self.attr_id = attr_id 
+        self.X = X
+        self.y = y
+        self.children = children
+        
+        self.label = label # only make sense when node is a leaf
+    
+    def __str__(self):
+        return '<attr_id: {0}, label: {1}, y: {2}>'.format(self.attr_id, self.label, self.y)
+    
+    def __repr__(self):
+        return self.__str__()
+    
+    def is_leaf(self):
+        return self.children is None
+    
+    def print_all(self):
+        print('attr_id:', self.attr_id)
+        print('X:', self.X)
+        print('y:', self.y)
+        print('children:', self.children)
+        print('label:', self.label)
+
+
+class MyDecisionTreeClassifier:
+    '''
+    Warning: this model a product of code practice,
+    it cannot handle continuous value, nor could it handle
+    missing value. This tree requires value in test samples 
+    all included in training samples.
+    '''
     def __init__(self):
-        self.w = None
+        self.X = None
+        self.y = None
+        self.tree = None
+        def _gini(self, branch:list):
+        '''compute Gini index of a branch of a tree split'''
+        return 1 - sum([(d/sum(branch))**2 for d in branch])
+
+    def _gini_index(self, split):
+        '''compute Gini index of a tree split'''
+        num_D = sum([sum(branch) for branch in split])
+        return sum([sum(branch)/num_D * self._gini(branch) for branch in split])
+    
+    def _count_samples_in_split(self, split):
+        '''
+        count instances in each branches of a split
+        
+        Examples
+        --------
+        >>> spl = [{'Data': np.array([['乌黑', '蜷缩', '沉闷', '清晰', '凹陷', '硬滑'],
+        ...          ['乌黑', '蜷缩', '浊响', '清晰', '凹陷', '硬滑'],
+        ...          ['乌黑', '稍蜷', '浊响', '稍糊', '稍凹', '软粘'],
+        ...          ['乌黑', '稍蜷', '浊响', '清晰', '稍凹', '硬滑'],
+        ...          ['乌黑', '稍蜷', '沉闷', '稍糊', '稍凹', '硬滑'],
+        ...          ['乌黑', '稍蜷', '浊响', '清晰', '稍凹', '软粘']]),
+        ...   'labels': np.array(['好瓜', '好瓜', '好瓜', '好瓜', '坏瓜', '坏瓜'])},
+        ...  {'Data': np.array([['浅白', '蜷缩', '浊响', '清晰', '凹陷', '硬滑'],
+        ...          ['浅白', '硬挺', '清脆', '模糊', '平坦', '硬滑'],
+        ...          ['浅白', '蜷缩', '浊响', '模糊', '平坦', '软粘'],
+        ...          ['浅白', '稍蜷', '沉闷', '稍糊', '凹陷', '硬滑'],
+        ...          ['浅白', '蜷缩', '浊响', '模糊', '平坦', '硬滑']]),
+        ...   'labels': np.array(['好瓜', '坏瓜', '坏瓜', '坏瓜', '坏瓜'])}]
+        >>> count_samples_in_split(split)
+        [[4, 2], [1, 4]]
+        '''
+        split_of_numbers = []
+        classes = set(self.y)
+        for b in split:
+            split_of_numbers.append([
+                len(b['Data'][b['labels']==c]) for c in classes
+            ])
+        return split_of_numbers
+
+    def _one_split(self, Data, labels, attr_id):
+        '''split a a set of samples by biven attribute'''
+        attr_vals = set(Data[:, attr_id])
+        split = []
+        for v in attr_vals:
+            split.append({
+                'Data': Data[Data[:, attr_id]==v], 
+                'labels': labels[Data[:, attr_id]==v]
+                })
+        return split
+
+    def _split(self, Data, labels):
+        '''
+        try all attributes to partition a set of samples 
+        and find the best split with lowest impurity
+        '''
+        partition = []     # all possible splits
+        gini_indices = []  # gini indices of each possible split
+
+        for attr_id in range(Data.shape[1]):
+            one_split = self._one_split(Data, labels, attr_id)
+            partition.append(one_split)
+            gini_indices.append(self._gini_index(
+                self._count_samples_in_split(one_split)))
+
+        attr_id = np.argmin(gini_indices)  # attribute that produce best split
+        return attr_id, partition[attr_id]
+
+    
+    def _build_tree(self, Data, labels):
+        '''recursively build a decision tree'''
+        if len(set(labels)) == 1:
+            # all instances belong to one class, make a leaf node
+            return DTreeNode(None, Data, labels, None, labels[0])
+
+        attr_id, split = self._split(Data, labels)
+        children = {}
+        for branch in split:
+            attr_val = branch['Data'][:, attr_id][0]
+            # build a sub-tree given a subset of data
+            children[attr_val] = self._build_tree(branch['Data'], branch['labels'])
+
+        return DTreeNode(attr_id, Data, labels, children, None)
+
+    def _print_tree(self, node, depth):
+        '''recursively preint the decision tree'''
+        for child_key, child_val in node.children.items():
+            print("|      " * depth, child_key , "+---", child_val)
+            if not child_val.is_leaf():
+                self._print_tree(child_val, depth+1)
+        
+    def print_tree(self):
+        '''preint the decision tree structure'''
+        if self.tree is None:
+            raise Exception("Model hasn't been trained")
+        print(self.tree)
+        self._print_tree(self.tree, 0)
 
     def fit(self, X, y):
-        pass
+        '''
+        Train a decision tree classifier model
+
+        Parameters
+        ----------
+        X: ndarray of shape (m, n)
+            sample data where row represent sample and column represent feature
+        y: ndarray of shape (m,)
+            labels of sample data
+
+        Returns
+        -------
+        self
+            trained model
+        '''
+        self.X = X,
+        self.y = y
+        self.tree = self._build_tree(X, y)
+        return self
+        
+    def _predict(self, x):
+        '''recursively traverse the tree and find and label for sample x'''
+        node = self.tree
+        while node.children is not None:
+            node = node.children.get(x[node.attr_id])
+        return node.label
     
     def predict(self, X):
-        pass
+        '''
+        Make prediction by the trained model.
+
+        Parameters
+        ----------
+        X: ndarray of shape (m, n)
+            data to be predicted, the same shape as trainning data
+
+        Returns
+        -------
+        C: ndarray of shape (m,)
+            Predicted class label per sample.
+        '''
+        if self.tree is None:
+            raise Exception("Model hasn't been trained")
+        assert len(X.shape)==2, 'Input X must be a 2d array'
+        results = []
+        for x in X:
+            results.append(self._predict(x))
+        return np.array(results)
 
 
 # ============================================================================
@@ -202,7 +375,7 @@ class DecisionTree:
 # ============================================================================
 
 
-class LinearSVM:
+class MyLinearSVM:
 
     def __init__(self):
         self.w = None
@@ -244,15 +417,59 @@ class LinearSVM:
 #                                Naive Bayes
 # ============================================================================
 
-class NaiveBayes:
+class MyCategoricalNBC:
+    '''nominal naive bayes classifier'''
 
     def __init__(self):
         self.X = None
         self.y = None
 
     def fit(self, X, y):
+        '''
+        Train the nominal naive bayes classifier model
+
+        Parameters
+        ----------
+        X: ndarray of shape (m, n)
+            sample data where row represent sample and column represent feature
+        y: ndarray of shape (m,)
+            labels of sample data
+
+        Returns
+        -------
+        self
+            trained model
+        '''
         self.X = X
         self.y = y
+        return self
+    
+    def _predict(self, x):
+        '''
+        compute probabilities and make prediction.
+        '''
+        probas = {}
+        clss = list(set(self.y))
+
+        # compute probability for each attributes in x
+        for c in clss:
+            probas[c] = []
+            dat = self.X[self.y==c]
+            for attr_id, attr_val in enumerate(x):
+                count = 0
+                for row in dat:
+                    if attr_val == row[attr_id]:
+                        count += 1
+                # use laplace smoothing
+                probas[c].append((count+1)/(len(dat)+len(x)))
+            probas[c].append(len(dat)/len(self.X))
+
+        final_probas = {}
+        from functools import reduce
+        for c, prbs in probas.items():
+            # theoretically not final probability because not divided by Pr(x)
+           final_probas[reduce(lambda x,y:x * y, prbs)] = c
+        return final_probas[max(final_probas)]
     
     def predict(self, X):
         '''
@@ -268,10 +485,61 @@ class NaiveBayes:
         C: ndarray of shape (m,)
             Predicted class label per sample.
         '''
-        if self.w == None:
-            raise Exception("Model haven't been trained!")
-        X = np.hstack([X, np.ones([len(X), 1])])
-        return binarize(sigmoid(X.dot(self.w)))
+        if self.X is None:
+             raise Exception("Model haven't been trained!")
+        return np.array([self._predict(x) for x in X])
+
+
+class MyGaussianNBC:
+    '''Gaussian continuous naive bayes classifier'''
+
+    def __init__(self):
+        self.X = None
+        self.y = None
+
+    def fit(self, X, y):
+        '''
+        Train the Gaussian continuous naive bayes classifier model
+
+        Parameters
+        ----------
+        X: ndarray of shape (m, n)
+            sample data where row represent sample and column represent feature
+        y: ndarray of shape (m,)
+            labels of sample data
+
+        Returns
+        -------
+        self
+            trained model
+        '''
+        self.X = X
+        self.y = y
+        return self
+
+    def _predict(self, x):
+        '''compute probabilities and make prediction.'''
+        from scipy.stats import norm
+        probas = {}
+        clss = list(set(self.y))
+
+        # compute probability for each attributes in x
+        for c in clss:
+            probas[c] = []
+            dat = self.X[self.y==c]
+            for i, attr in enumerate(x):
+                probas[c].append(norm(np.mean(dat[:,i]), np.std(dat[:,i])).pdf(attr))
+            probas[c].append(len(dat)/len(self.X))
+
+        final_probas = {}
+        from functools import reduce
+        for c, prbs in probas.items():
+            # theoretically not final probability because not divided by Pr(x)
+           final_probas[reduce(lambda x,y:x * y, prbs)] = c
+        return final_probas[max(final_probas)]
+    
+    def predict(self, X):
+        return np.array([self._predict(x) for x in X])
 
 
 # ============================================================================
@@ -279,7 +547,7 @@ class NaiveBayes:
 # ============================================================================
 
 
-class KNNClissifier:
+class MyKNNClissifier:
 
     def __init__(self):
         self.X = None
@@ -365,6 +633,8 @@ class KNNClissifier:
 #                               Miscellaneous
 # ============================================================================
 
+
+from sklearn.tree import DecisionTreeClassifier
 
 if __name__ == '__main__':
     import doctest

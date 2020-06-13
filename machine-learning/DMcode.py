@@ -361,6 +361,23 @@ def info_gain(parent:list, children:list):
     '''
     return entropy(parent) - sum([(sum(i)/sum(parent))*entropy(i) for i in children])
 
+def gain_ratio(parent:list, children:list):
+    '''
+    compute information gain ratio of a tree split
+
+    Examples
+    --------
+        >>> parent = [10, 10]
+        >>> children1 = [[5, 5], [5, 5]]; children2 = [[10, 8], [0, 2]]
+        >>> gain_ratio(parent, children1)
+        0.0
+        >>> gain_ratio(parent, children2)
+        0.2303466122545442
+    '''
+    num_each_attr_value = [sum(branch) for branch in children]
+    IV = entropy(num_each_attr_value) # IV is essentially a type of entropy
+    return info_gain(parent, children) / IV
+
 
 # ======================================================
 #               Classification Metrics
@@ -372,7 +389,7 @@ def build_confmat(predicted, actual, return_type='matrix'):
                         predicted
                 -------------------
                 |     |  Y  |  N  |
-                -------------------
+                +-----+-----+-----+
                 |  Y  | TP  | FN  |
           actual|  N  | FP  | TN  |
                 -------------------
@@ -425,7 +442,7 @@ def confmat_metrics(mat):
                         predicted
                 -------------------
                 |     |  Y  |  N  |
-                -------------------
+                +-----+-----+-----+
                 |  Y  | TP  | FN  |
           actual|  N  | FP  | TN  |
                 -------------------
@@ -470,7 +487,7 @@ def metrics_from_general_confusion_matrix(mat, cls_i:int):
                        predicted
               -----------------------
               |    |  a  |  b  |  c |
-              -----------------------
+              +----+-----+-----+----+
               | a  | 88  |  10 |  2 | 
        actual | b  | 14  |  40 |  6 |
               | c  | 18  |  10 | 12 |
@@ -520,7 +537,7 @@ def cohen_kappa(mat):
                        C'
             -----------------------
             |    |    A   |   B   |
-            -----------------------
+            +----+--------+-------+
             | A  | aa(20) | ab(5) |
           C | B  | ba(10) | bb(15)|
             -----------------------
