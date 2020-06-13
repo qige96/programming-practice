@@ -3,7 +3,7 @@ Simple implementation of some supervised learning algorithms.
 '''
 import numpy as np
 
-from utils import binarize, sigmoid
+from utils import binarize, sigmoid, relu
 
 # ============================================================================
 #                                Regression
@@ -113,7 +113,7 @@ class MyLogisticRegression:
     def _loss_function(self, X, y, w): 
         '''cross entropy as loss function'''
         y_hat = sigmoid(X.dot(w))
-        ll = np.sum(y * np.log(y_hat) - (1-y) * np.log(1-y_hat))
+        ll = (1/len(y)) *np.sum(y * np.log(y_hat) - (1-y) * np.log(1-y_hat))
         return ll
 
     def _gradient_descent(self, X, y, w, eta):
@@ -634,7 +634,67 @@ class MyKNNClissifier:
 # ============================================================================
 
 
-from sklearn.tree import DecisionTreeClassifier
+# ============================================================================
+#                            Multilayer Perceptron
+# ============================================================================
+
+
+class MyMLPClassifier:
+
+    def __init__(self, layer_dims):
+
+        assert len(layer_dims)>=3, 'layer_dims should be at least 3 elements'
+        self.input_size = layer_dims[0]
+        self.ouput_size = layer_dims[-1]
+        self.hidden_size = layer_dims[1:-1]
+        self.Weights = self._init_weights(layer_dims)
+        self.biases = self._init_biases(layer_dims)
+    
+    def _init_weights(self, layer_dims):
+        Ws = []
+        for i in range(len(layer_dims) - 1):
+            W = np.random.randn(layer_dims[i+1], layer_dims[i])
+            Ws.append(W)
+        return Ws
+
+    def _init_biases(self, layer_dims):
+        bs = []
+        for i in range(len(layer_dims)-1):
+            b = np.random.randn(layer_dims[i+1], 1)
+            bs.append(b)
+        return bs
+
+    def _forward_once(self, W, A, b, activate):
+        next_A = activate(np.dot(W, A) + b)
+        print(next_A)
+        return next_A
+    
+    def _forward(self, A):
+        for i in range(len(self.Weights) - 1):
+            A = self._forward_once(self.Weights[i], A, self.biases[i], relu)
+        return self._forward_once(self.Weights[-1], A, self.biases[-1], sigmoid)
+    
+    def _loss(self):
+        Z = self._forward(self.X)
+        y_hat = np.max(Z, axis=1).flatten()
+        y = self.y
+        logloss =  (1/len(y)) *np.sum(y * np.log(y_hat) - (1-y) * np.log(1-y_hat))
+        return logloss
+    
+    def _back_propagate(self):
+        pass
+
+    def fit(self, X, y, eta=0.001, eps=1e-8, max_iter=200):
+        self.X = X
+        self.y = y
+        pass
+    
+    def predict(self, X):
+        Z = self._forward(X)
+        return np.argmax(Z, axis=1)
+
+
+
 
 if __name__ == '__main__':
     import doctest
