@@ -1,4 +1,5 @@
 import copy
+from collections import Counter
 import numpy as np 
 
 
@@ -90,11 +91,58 @@ class MyAdaBoostClassifier:
 
 class MyRandomForestClassifier:
 
-    def __init__(self):
-        pass
+    def __init__(self, n_learners=100):
+        from sklearn.tree import DecisionTreeClassifier
+        base_tree = DecisionTreeClassifier(max_features='log2')
+        self.learners = [copy.deepcopy(base_tree) for k in range(n_learners)]
 
     def fit(self, X, y):
-        pass
+        '''
+        Build an random forest classifier
+
+        Parameters
+        ----------
+        X: ndarray of shape (m, n)
+            sample data where row represent sample and column represent feature
+        y: ndarray of shape (m,)
+            labels of sample data
+
+        Returns
+        -------
+        self
+            trained model
+        '''
+        for learner in self.learners:
+            new_index = np.random.choice(range(len(X)), int(0.6*len(X)), replace=False)
+            new_X = X[new_index]
+            new_y = y[new_index]
+            learner.fit(new_X, new_y)
+        return self
 
     def predict(self, X):
-        pass
+        '''
+        Make prediction by the trained model.
+
+        Parameters
+        ----------
+        X: ndarray of shape (m, n)
+            data to be predicted, the same shape as trainning data
+        func_sign: function
+            sign function that convert weighted sums into labels
+
+        Returns
+        -------
+        C: ndarray of shape (m,)
+            Predicted class label per sample.
+        '''
+        Y = []
+        y = []
+        for learner in self.learners:
+            Y.append(learner.predict(X))
+        Y = np.array(Y)
+        
+        for i in range(Y.shape[1]):
+            counter = Counter(Y[:, i])
+            y.append(counter.most_common(1)[0][0])
+
+        return np.array(y)

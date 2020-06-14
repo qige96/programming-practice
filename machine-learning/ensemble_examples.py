@@ -24,3 +24,16 @@ from sklearn.ensemble import AdaBoostClassifier
 skada = AdaBoostClassifier(n_estimators=100, random_state=0)
 skada.fit(X_train, y_train)
 print('Sk AdaBoost:', accuracy_score(y_test, skada.predict(X_test)))
+
+
+print('\nRandom Forest')
+print('---------------------------------------------------------------------')
+myforest = MyRandomForestClassifier()
+myforest.fit(X_train, y_train)
+# print(myforest.predict(X_test))
+print('My forest:', accuracy_score(y_test, myforest.predict(X_test)))
+
+from sklearn.ensemble import RandomForestClassifier
+skforest = RandomForestClassifier()
+skforest.fit(X_train, y_train)
+print('SK forest:', accuracy_score(y_test, skforest.predict(X_test)))
