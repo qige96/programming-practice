@@ -12,13 +12,15 @@ CONFIG = {
         'remoteRepoURI': ''
         }
 
-
-def writenote(filename=None):
-    if filename is None:
-        d = datetime.datetime.now()
-        filename = d.strftime('%Y-%m-%d_%H-%M-%S.txt')
+def create_and_write():
+    d = datetime.datetime.now()
+    filename = d.strftime('%Y-%m-%d_%H-%M-%S.txt')
     fullname = os.path.join(CONFIG['localRepoDir'], filename)
-    print(os.path.dirname(fullname))
+    os.makedirs(os.path.dirname(fullname), exist_ok=True)
+    subprocess.call([CONFIG['writer'], fullname])
+
+def writenote(filename):
+    fullname = os.path.join(CONFIG['localRepoDir'], filename)
     os.makedirs(os.path.dirname(fullname), exist_ok=True)
     subprocess.call([CONFIG['writer'], fullname])
 
@@ -42,25 +44,8 @@ def list_files_recursive(path):
     lst = [file for file in files]
     return lst
 
-def listnotes():
-    files = list_files_recursive(CONFIG['localRepoDir'])
-    for f in files:
-        if not os.path.isdir(f):
-            print(f.replace(CONFIG['localRepoDir'], '')[1:])
-
-def search(keywords):
-    files = list_files_recursive(CONFIG['localRepoDir'])
-    results = {}
-    i = 0
-    for f in files:
-        if not os.path.isdir(f):
-            results.setdefault(i, [f.replace(CONFIG['localRepoDir'], '')[1:], f])
-            i += 1
-    for j in range(i):
-        print('[{0}] {1}'.format(j, results[j][0]))
-    
+def interactive(results):
     print('')
-
     while True:
         noteno = input('Which note would you like to check? ')
         if noteno == '':
@@ -70,12 +55,38 @@ def search(keywords):
             prog = 'less'
         subprocess.call([prog, results[int(noteno)][1]])
 
+def listnotes(is_interactive=False):
+    files = list_files_recursive(CONFIG['localRepoDir'])
+    results = []
+    for f in files:
+        if not os.path.isdir(f):
+            results.append([f.replace(CONFIG['localRepoDir'], '')[1:], f])
+            
+    for i, entry in enumerate(results):
+        print('[{0}] {1}'.format(i, entry[0]))
+
+    if is_interactive:
+        interactive(results)
+
+def search(keywords, is_interactive=False):
+    files = list_files_recursive(CONFIG['localRepoDir'])
+    results = []
+    for f in files:
+        if not os.path.isdir(f):
+            results.append([f.replace(CONFIG['localRepoDir'], '')[1:], f])
+            
+    for i, entry in enumerate(results):
+        print('[{0}] {1}'.format(i, entry[0]))
+
+    if is_interactive: 
+        interactive(results)
+
 
 def main():
     parser = argparse.ArgumentParser(description='Command line note taking tool.')
     subparsers = parser.add_subparsers(dest='subparser_name')
     write_parser = subparsers.add_parser('w')
-    write_parser.add_argument('filename')
+    write_parser.add_argument('filename', nargs='?')
     write_parser.add_argument('--writer')
 
     read_parser = subparsers.add_parser('r')
@@ -84,8 +95,10 @@ def main():
 
     search_parser = subparsers.add_parser('s')
     search_parser.add_argument('keywords')
+    search_parser.add_argument('-i', '--interactive', dest='is_interactive', action='store_true')
 
     ls_parser = subparsers.add_parser('ls')
+    ls_parser.add_argument('-i', '--interactive', dest='is_interactive', action='store_true')
 
     args = parser.parse_args()
 
@@ -94,9 +107,11 @@ def main():
     elif args.subparser_name == 'w':
         writenote(args.filename)
     elif args.subparser_name == 'ls':
-        listnotes()
+        listnotes(args.is_interactive)
     elif args.subparser_name == 's':
-        search(args.keywords)
+        search(args.keywords, args.is_interactive)
+    elif args.subparser_name == None:
+        create_and_write() 
 
 
 if __name__ == "__main__":

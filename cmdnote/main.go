@@ -10,13 +10,19 @@ import (
 	"path"
 	"path/filepath"
 	"time"
+
+	"github.com/blevesearch/bleve"
+)
+
+const (
+	BleveFolder = "notes.bleve"
 )
 
 type Configuration struct {
-	Editor        string
-	Browser       string
-	LocalRepoDir  string
-	RemoteRepoDir string
+	Editor        string `json:"editor"`
+	Browser       string `json:"browser"`
+	LocalRepoDir  string `json:"localRepoDir,omitempty"`
+	RemoteRepoDir string `json:"remoteRepoDir,mitempty"`
 }
 
 var CONF Configuration = Configuration{
@@ -24,6 +30,22 @@ var CONF Configuration = Configuration{
 	"less",
 	GetDefaultLocalRepoDir(),
 	"",
+}
+
+func init(repoPath string) {
+	if !os.IsExist(repoPath) {
+		os.MkdirAll(repoPath, os.ModePerm)
+	}
+	if !os.IsExist(os.Join(repoPath, BleveFolder)) {
+		mapping := bleve.NewIndexMapping()
+		index, err := bleve.New(BleveFolder, mapping)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+	if !os.IsExist(os.Join(repoPath, ".git")) {
+		// git init
+	}
 }
 
 func GetDefaultLocalRepoDir() string {
@@ -182,6 +204,7 @@ func interactiveSession(noteNames []string) {
 }
 
 func main() {
+	init(CONF.LocalRepoDir)
 	// fmt.Println(CONF)
 	DumpConf(path.Join(path.Dir(GetDefaultLocalRepoDir()), "conf.json"))
 	// writeNote("nvim", path.Join(CONF.LocalRepoDir, getTimeFileName()))
